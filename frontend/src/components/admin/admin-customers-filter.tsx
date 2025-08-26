@@ -18,7 +18,6 @@ export default function AdminFilterCustomers() {
     const filterCustomersOption = useSelector(
         customersSelector.selectFilterOption
     )
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
 
     const handleFilter = (filters: Record<string, any>) => {
         dispatch(updateFilter({ ...filters }))
@@ -26,14 +25,14 @@ export default function AdminFilterCustomers() {
         Object.entries(filters).forEach(([key, value]) => {
             if (value) {
                 queryParams[key] =
-                    typeof value === 'object' ? value.value : value.toString()
+                    typeof value === 'object' && 'value' in value
+                        ? value.value
+                        : value.toString()
             }
         })
         setSearchParams(queryParams)
         navigate(
-            `${AppRoute.AdminCustomers}?${new URLSearchParams(
-                queryParams
-            ).toString()}`
+            `${AppRoute.AdminCustomers}?${new URLSearchParams(queryParams).toString()}`
         )
     }
 

@@ -1,6 +1,7 @@
 import { API_URL, CDN_URL } from '@constants'
 
 import {
+    CsrfResponse,
     ICustomerPaginationResult,
     ICustomerResult,
     IFile,
@@ -33,6 +34,7 @@ export type ApiListResponse<Type> = {
 class Api {
     private readonly baseUrl: string
     protected options: RequestInit
+    protected token = ''
 
     constructor(baseUrl: string, options: RequestInit = {}) {
         this.baseUrl = baseUrl
@@ -129,12 +131,11 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
         const queryParams = new URLSearchParams(
             filters as Record<string, string>
         ).toString()
+
         return this.request<IProductPaginationResult>(
             `/product?${queryParams}`,
-            {
-                method: 'GET',
-            }
-        ).then((data) => ({
+            { method: 'GET' }
+        ).then((data: IProductPaginationResult) => ({
             ...data,
             items: data.items.map((item) => ({
                 ...item,
@@ -232,6 +233,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
             body: JSON.stringify(data),
             headers: {
                 'Content-Type': 'application/json',
+                'x-csrf-token': this.token ?? '',
             },
             credentials: 'include',
         })
@@ -249,9 +251,19 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
     }
 
     getUser = () => {
-        return this.requestWithRefresh<UserResponse>('/auth/user', {
+        return this.requestWithRefresh<CsrfResponse>('/csrf-token', {
             method: 'GET',
-            headers: { Authorization: `Bearer ${getCookie('accessToken')}` },
+            credentials: 'include',
+        }).then((res) => {
+            this.token = res.csrfToken
+
+            return this.requestWithRefresh<UserResponse>('/auth/user', {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${getCookie('accessToken')}`,
+                    'x-csrf-token': res.csrfToken ?? '',
+                },
+            })
         })
     }
 
