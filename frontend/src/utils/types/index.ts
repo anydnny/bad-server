@@ -141,3 +141,7 @@ export interface IOrderResult {
     createdAt: string
     updatedAt: string
 }
+
+export type CsrfResponse = ServerResponse<{
+    csrfToken: string
+}>
